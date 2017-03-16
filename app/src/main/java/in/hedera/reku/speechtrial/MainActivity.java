@@ -2,6 +2,7 @@ package in.hedera.reku.speechtrial;
 
 import android.Manifest;
 import android.content.ActivityNotFoundException;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -15,7 +16,9 @@ import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.TextView;
+import android.widget.ToggleButton;
 
 import java.util.ArrayList;
 import java.util.Locale;
@@ -23,6 +26,9 @@ import java.util.Locale;
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = MainActivity.class.getSimpleName();
+    private BluetoothControllerImpl bluetoothController;
+    private int activitiesCount;
+    private boolean sco = false;
     private static final int REQ_CODE_SPEECH_INPUT = 100;
     private static final int RECORD_REQUEST_CODE = 101;
 
@@ -65,6 +71,23 @@ public class MainActivity extends AppCompatActivity {
         speechLayout = findViewById(R.id.speechtotext);
         voiceLayout = findViewById(R.id.voicecall);
         expLayout = findViewById(R.id.experimental);
+        ToggleButton togglesco = (ToggleButton) findViewById(R.id.toggleSCO);
+        togglesco.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
+
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if(isChecked && !sco){
+                    bluetoothController.start();
+                    sco = true;
+                }else{
+                    if(sco){
+                        bluetoothController.stop();
+                        sco = false;
+                    }
+
+                }
+            }
+        });
 
         Button speechInputButton = (Button) speechLayout.findViewById(R.id.speakbutton);
         speechInputButton.setOnClickListener(new View.OnClickListener() {
@@ -76,7 +99,15 @@ public class MainActivity extends AppCompatActivity {
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
         checkAudioRecordPermission();
+        bluetoothController = new BluetoothControllerImpl(this);
+//        bluetoothController.start();
         TTS.init(getApplicationContext());
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+//        bluetoothController.stop();
     }
 
     private void startVoiceInput() {
@@ -89,12 +120,6 @@ public class MainActivity extends AppCompatActivity {
         } catch (ActivityNotFoundException a) {
 
         }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        TTS.shutdown();
     }
 
     @Override
@@ -144,4 +169,38 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
+    private class BluetoothControllerImpl extends BluetoothController {
+
+        /**
+         * Constructor
+         *
+         * @param context
+         */
+        public BluetoothControllerImpl(Context context) {
+            super(context);
+        }
+
+        @Override
+        public void onHeadsetDisconnected() {
+            Log.d(TAG, "Bluetooth headset disconnected");
+        }
+
+        @Override
+        public void onHeadsetConnected() {
+            Log.d(TAG, "Bluetooth headset connected");
+        }
+
+        @Override
+        public void onScoAudioDisconnected() {
+            Log.d(TAG, "Bluetooth sco audio finished");
+            bluetoothController.stop();
+
+        }
+
+        @Override
+        public void onScoAudioConnected() {
+            Log.d(TAG, "Bluetooth sco audio started");
+        }
+    }
 }

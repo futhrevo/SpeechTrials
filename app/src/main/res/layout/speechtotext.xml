@@ -11,7 +11,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|center"
         android:layout_margin="80dp"
-        android:text="Button"
+        android:text="Speak"
         tools:text="Speak" />
 
     <TextView
@@ -21,4 +21,17 @@
         android:layout_margin="5dp"
         android:text="Speech recognition output here"
         tools:text="Speech recognition output here" />
+
+    <ToggleButton
+        android:id="@+id/toggleSCO"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center"
+        android:layout_margin="5dp"
+        android:checked="false"
+        android:text="ToggleButton"
+        android:textOff="Start SCO"
+        android:textOn="Stop SCO"
+        tools:text="SCO toggle" />
+
 </FrameLayout>
