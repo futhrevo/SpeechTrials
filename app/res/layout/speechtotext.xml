@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    >
+
+    <Button
+        android:id="@+id/speakbutton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center"
+        android:layout_margin="80dp"
+        android:text="Speak"
+        tools:text="Speak" />
+
+    <TextView
+        android:id="@+id/recognisedtextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="5dp"
+        android:text="Speech recognition output here"
+        tools:text="Speech recognition output here" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_gravity="bottom|center"
+        android:layout_margin="5dp">
+
+        <ToggleButton
+            android:id="@+id/toggleCVD"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="ToggleCVD"
+            android:textOff="Snowboy OFF"
+            android:textOn="Snowboy ON" />
+
+        <ToggleButton
+            android:id="@+id/toggleSCO"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:checked="false"
+            android:text="ToggleButton"
+            android:textOff="Start SCO"
+            android:textOn="Stop SCO"
+            tools:text="SCO toggle" />
+    </LinearLayout>
+
+
+</FrameLayout>
