@@ -7,15 +7,19 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
-import android.support.v4.content.LocalBroadcastManager;
 import android.telephony.SmsMessage;
 import android.util.Log;
-import android.widget.Toast;
+
+import in.hedera.reku.speechtrial.NotifyService;
+
+import static in.hedera.reku.speechtrial.NotifyService.ACTION_SMS_RECEIVED;
 
 
 public class SimpleSmsReceiver extends BroadcastReceiver {
 
     public static final String INCOMING_SMS_LOCAL_BROADCAST = "incomingSms";
+    public static final String INCOMING_SMS_INTENT_SENDER = "sender";
+    public static final String INCOMING_SMS_INTENT_MESSAGE = "message";
 
     private static final String TAG = SimpleSmsReceiver.class.getSimpleName();
     @Override
@@ -38,12 +42,18 @@ public class SimpleSmsReceiver extends BroadcastReceiver {
         }
         cur.close();
 
-        Toast.makeText(context, "SMS Received : "+messages.getMessageBody(),
-                Toast.LENGTH_LONG) .show();
+        if(sender == null){
+            sender = "Unknown Number";
+        }
 
-        Intent intentLocal = new Intent(INCOMING_SMS_LOCAL_BROADCAST);
-        intentLocal.putExtra("sender", sender);
-        intentLocal.putExtra("message", callMessage);
-        LocalBroadcastManager.getInstance(context).sendBroadcast(intentLocal);
+//        Toast.makeText(context, "SMS Received : "+messages.getMessageBody(),
+//                Toast.LENGTH_LONG) .show();
+
+
+        Intent serv = new Intent(context, NotifyService.class);
+        serv.setAction(ACTION_SMS_RECEIVED);
+        serv.putExtra(INCOMING_SMS_INTENT_SENDER, sender);
+        serv.putExtra(INCOMING_SMS_INTENT_MESSAGE, callMessage);
+        context.startService(serv);
     }
 }

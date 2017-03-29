@@ -6,19 +6,26 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.ContactsContract;
-import android.support.v4.content.LocalBroadcastManager;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
+import in.hedera.reku.speechtrial.NotifyService;
+
+import static in.hedera.reku.speechtrial.NotifyService.ACTION_PHONE_STATE;
+
 public class IncomingCall extends BroadcastReceiver {
     String sender;
     Context c;
+    Intent i;
 
     public static final String INCOMING_CALL_LOCAL_BROADCAST = "incomingcall";
+    public static final String INCOMING_CALL_INTENT_SENDER = "sender";
     @Override
     public void onReceive(Context context, Intent intent) {
+
         c = context;
+        i= intent;
         try{
             // TELEPHONY MANAGER class object to register one listner
             TelephonyManager tmgr = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
@@ -40,20 +47,23 @@ public class IncomingCall extends BroadcastReceiver {
             Log.d("MyPhoneListener",state+"   incoming no:"+incomingNumber);
 
             if (state == 1) {
-                Uri personUri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI,"+" + incomingNumber);
+                Uri personUri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, "+" + incomingNumber);
 
                 Cursor cur = c.getContentResolver().query(personUri, new String[]{ContactsContract.PhoneLookup.DISPLAY_NAME}, null, null, null);
 
-                if( cur.moveToFirst() ) {
+                if (cur.moveToFirst()) {
                     int nameIndex = cur.getColumnIndex(ContactsContract.PhoneLookup.DISPLAY_NAME);
 
                     sender = cur.getString(nameIndex);
                 }
                 cur.close();
-
-                Intent intent = new Intent(INCOMING_CALL_LOCAL_BROADCAST);
-                intent.putExtra("sender", sender);
-                LocalBroadcastManager.getInstance(c).sendBroadcast(intent);
+                if (sender == null) {
+                    sender = "Unknown Number";
+                }
+                Intent serv = new Intent(c, NotifyService.class);
+                serv.setAction(ACTION_PHONE_STATE);
+                serv.putExtra(INCOMING_CALL_INTENT_SENDER, sender);
+                c.startService(serv);
 
             }
         }

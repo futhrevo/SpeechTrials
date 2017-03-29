@@ -67,7 +67,11 @@
         <service
             android:name=".speech.SpeechActivationService"
             android:enabled="true"
-            android:exported="false" />
+            android:exported="true" />
+        <service
+            android:name=".NotifyService"
+            android:enabled="true"
+            android:exported="true" />
     </application>
 
 </manifest>

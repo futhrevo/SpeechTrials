@@ -1,7 +1,6 @@
 package in.hedera.reku.speechtrial;
 
 import android.Manifest;
-import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -10,10 +9,10 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.os.Bundle;
-import android.os.Handler;
 import android.speech.RecognizerIntent;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -30,8 +29,8 @@ import java.util.Locale;
 
 import in.hedera.reku.speechtrial.speech.SpeechActivationService;
 
-import static in.hedera.reku.speechtrial.actions.IncomingCall.INCOMING_CALL_LOCAL_BROADCAST;
-import static in.hedera.reku.speechtrial.actions.SimpleSmsReceiver.INCOMING_SMS_LOCAL_BROADCAST;
+import static in.hedera.reku.speechtrial.NotifyService.ACTION_SPEAK;
+import static in.hedera.reku.speechtrial.NotifyService.INCOMING_SPEAK_MESSAGE;
 import static in.hedera.reku.speechtrial.speech.SpeechActivationService.ACTIVATION_RESULT_BROADCAST_NAME;
 import static in.hedera.reku.speechtrial.speech.SpeechActivationService.ACTIVATION_RESULT_INTENT_KEY;
 
@@ -128,7 +127,7 @@ public class MainActivity extends AppCompatActivity {
         testButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+                TTSspeak("Hello World");
             }
         });
         if (needPermissions(this)) {
@@ -136,7 +135,6 @@ public class MainActivity extends AppCompatActivity {
         }
         bluetoothController = new BluetoothControllerImpl(this);
 //        bluetoothController.start();
-        TTS.init(getApplicationContext());
         audioManager=(AudioManager)getSystemService(Context.AUDIO_SERVICE);
     }
 
@@ -146,8 +144,6 @@ public class MainActivity extends AppCompatActivity {
         // We are registering an observer (mMessageReceiver) to receive Intents
         // with actions named "custom-event-name".
         LocalBroadcastManager.getInstance(this).registerReceiver(activationBroadcastReceiver, new IntentFilter(ACTIVATION_RESULT_BROADCAST_NAME));
-        LocalBroadcastManager.getInstance(this).registerReceiver(incomingCallBroadcastReceiver, new IntentFilter(INCOMING_CALL_LOCAL_BROADCAST));
-        LocalBroadcastManager.getInstance(this).registerReceiver(incomingSMSBroadcastReceiver, new IntentFilter(INCOMING_SMS_LOCAL_BROADCAST));
         super.onResume();
     }
 
@@ -155,8 +151,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         // Unregister since the activity is paused.
         LocalBroadcastManager.getInstance(this).unregisterReceiver(activationBroadcastReceiver);
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(incomingCallBroadcastReceiver);
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(incomingSMSBroadcastReceiver);
         super.onPause();
     }
 
@@ -231,7 +225,7 @@ public class MainActivity extends AppCompatActivity {
 
                     ArrayList<String> result = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
                     recognisedView.setText(result.get(0));
-                    TTS.speak(result.get(0));
+                    TTSspeak(result.get(0));
                 }
                 break;
             }
@@ -241,13 +235,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    static public boolean needPermissions(Activity activity) {
-        return activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
-                || activity.checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED
-                || activity.checkSelfPermission(Manifest.permission.RECEIVE_SMS) != PackageManager.PERMISSION_GRANTED
-                || activity.checkSelfPermission(Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED
-                || activity.checkSelfPermission(Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED
-                || activity.checkSelfPermission(Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED ;
+    static public boolean needPermissions(Context context) {
+        return ActivityCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
+                || ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED
+                || ActivityCompat.checkSelfPermission(context, Manifest.permission.RECEIVE_SMS) != PackageManager.PERMISSION_GRANTED
+                || ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED
+                || ActivityCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED
+                || ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED ;
     }
 
     private void requestPermissions() {
@@ -260,7 +254,7 @@ public class MainActivity extends AppCompatActivity {
                 Manifest.permission.SEND_SMS,
                 Manifest.permission.READ_PHONE_STATE
         };
-        requestPermissions(permissions, PERMISSIONS_REQUEST_ALL_PERMISSIONS);
+        ActivityCompat.requestPermissions(this ,permissions, PERMISSIONS_REQUEST_ALL_PERMISSIONS);
     }
 
     private class BluetoothControllerImpl extends BluetoothController {
@@ -311,35 +305,13 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    private BroadcastReceiver incomingCallBroadcastReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String sender = intent.getStringExtra("sender");
-            TTSspeak("You have an incoming call from "+ sender);
-        }
-    };
-
-    private BroadcastReceiver incomingSMSBroadcastReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String sender = intent.getStringExtra("sender");
-            String message = intent.getStringExtra("message");
-            TTSspeak("sms from " + sender + " . . . " + message );
-        }
-    };
 
 
     private void TTSspeak(String string){
-            audioManager.setRingerMode(AudioManager.RINGER_MODE_SILENT);
-            // Start playback
-            TTS.speak(string);
-            long duration = string.length() * 100 ;
-            new Handler().postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    audioManager.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
-                }
-            }, duration);
+        Log.d(TAG, string);
+            Intent speakintent = new Intent(getApplication(), NotifyService.class);
+            speakintent.setAction(ACTION_SPEAK);
+            speakintent.putExtra(INCOMING_SPEAK_MESSAGE, string);
+            startService(speakintent);
         }
-
 }
