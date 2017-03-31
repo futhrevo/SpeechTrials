@@ -99,6 +99,7 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
 
     @Override
     public void run() {
+
         Log.d(TAG, "run thread");
         while (! mIsReady) {
             synchronized (sLock) {
@@ -108,6 +109,9 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
                     e.printStackTrace();
                 }
             }
+        }
+        if(mIntent == null){
+            return;
         }
         final String action = mIntent.getAction();
 
@@ -149,6 +153,7 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
 
                 Bundle b = new Bundle();
                 b.putString(TextToSpeech.Engine.KEY_PARAM_STREAM, STREAM_SYSTEM_STR);
+                Log.d(TAG, "SMS from " + sender + " . . . " + message);
                 mTts.speak("SMS from " + sender + " . . . " + message, TextToSpeech.QUEUE_FLUSH, null, SMS_UTTERENCE_ID);
             }
 
