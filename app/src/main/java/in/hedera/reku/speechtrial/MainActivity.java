@@ -278,7 +278,8 @@ public class MainActivity extends AppCompatActivity {
                 || ActivityCompat.checkSelfPermission(context, Manifest.permission.RECEIVE_SMS) != PackageManager.PERMISSION_GRANTED
                 || ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED
                 || ActivityCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED
-                || ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED ;
+                || ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED
+                || ActivityCompat.checkSelfPermission(context, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED;
     }
 
     private void requestPermissions() {
@@ -289,7 +290,8 @@ public class MainActivity extends AppCompatActivity {
                 Manifest.permission.RECEIVE_SMS,
                 Manifest.permission.READ_SMS,
                 Manifest.permission.SEND_SMS,
-                Manifest.permission.READ_PHONE_STATE
+                Manifest.permission.READ_PHONE_STATE,
+                Manifest.permission.CALL_PHONE
         };
         ActivityCompat.requestPermissions(this ,permissions, PERMISSIONS_REQUEST_ALL_PERMISSIONS);
     }

@@ -22,6 +22,7 @@ public class IncomingCall extends BroadcastReceiver {
 
     public static final String INCOMING_CALL_IS_STARRED = "isStarredSender";
     public static final String INCOMING_CALL_INTENT_SENDER = "sender";
+    public static final String INCOMING_CALL_NUMBER = "number";
     @Override
     public void onReceive(Context context, Intent intent) {
 
@@ -65,6 +66,7 @@ public class IncomingCall extends BroadcastReceiver {
                 serv.setAction(ACTION_PHONE_STATE);
                 serv.putExtra(INCOMING_CALL_INTENT_SENDER, sender);
                 serv.putExtra(INCOMING_CALL_IS_STARRED, isStarred);
+                serv.putExtra(INCOMING_CALL_NUMBER, incomingNumber);
                 c.startService(serv);
 
             }

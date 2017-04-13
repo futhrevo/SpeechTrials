@@ -14,6 +14,7 @@ import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.ActionBar;
+import android.util.Log;
 import android.view.MenuItem;
 
 /**
@@ -45,12 +46,23 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                 // the preference's 'entries' list.
                 ListPreference listPreference = (ListPreference) preference;
                 int index = listPreference.findIndexOfValue(stringValue);
+                Log.e(TAG, listPreference.getKey());
+                Log.e(TAG, stringValue);
+                if(listPreference.getKey().equals("pref_call_action")){
+                    Preference pref_call_reject_sms = preference.getPreferenceManager().findPreference("pref_call_reject_sms");
+                    if(stringValue.equals("-1")){
+                        pref_call_reject_sms.setEnabled(false);
+                    }else{
+                        pref_call_reject_sms.setEnabled(true);
+                    }
+                }
 
                 // Set the summary to reflect the new value.
                 preference.setSummary(
                         index >= 0
                                 ? listPreference.getEntries()[index]
                                 : null);
+
 
             } else {
                 // For all other preferences, set the summary to the value's
@@ -160,6 +172,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             bindPreferenceSummaryToValue(findPreference("example_text"));
             bindPreferenceSummaryToValue(findPreference("pref_call_action"));
             bindPreferenceSummaryToValue(findPreference("pref_sms_action"));
+            bindPreferenceSummaryToValue(findPreference("pref_call_reject_sms"));
         }
 
         @Override

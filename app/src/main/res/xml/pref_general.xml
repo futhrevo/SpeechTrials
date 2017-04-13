@@ -45,6 +45,16 @@
             android:entries="@array/pref_call_action_list_titles"
             android:entryValues="@array/pref_call_action__list_values"
             />
+
+        <EditTextPreference
+            android:defaultValue="@string/pref_call_reject_sms_default"
+            android:inputType="text"
+            android:key="pref_call_reject_sms"
+            android:maxLines="3"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:title="@string/pref_call_reject_sms_title"
+            android:enabled="false" />
     </PreferenceCategory>
     <PreferenceCategory
         android:title="@string/pref_sms_title"

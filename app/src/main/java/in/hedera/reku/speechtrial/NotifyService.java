@@ -1,5 +1,6 @@
 package in.hedera.reku.speechtrial;
 
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -11,12 +12,20 @@ import android.preference.PreferenceManager;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import android.speech.tts.UtteranceProgressListener;
+import android.telephony.SmsManager;
+import android.telephony.TelephonyManager;
 import android.util.Log;
+
+import com.android.internal.telephony.ITelephony;
+
+import java.lang.reflect.Method;
+import java.util.List;
 
 import static android.media.AudioManager.STREAM_NOTIFICATION;
 import static in.hedera.reku.speechtrial.R.string.isRunning;
 import static in.hedera.reku.speechtrial.actions.IncomingCall.INCOMING_CALL_INTENT_SENDER;
 import static in.hedera.reku.speechtrial.actions.IncomingCall.INCOMING_CALL_IS_STARRED;
+import static in.hedera.reku.speechtrial.actions.IncomingCall.INCOMING_CALL_NUMBER;
 import static in.hedera.reku.speechtrial.actions.SimpleSmsReceiver.INCOMING_SMS_INTENT_MESSAGE;
 import static in.hedera.reku.speechtrial.actions.SimpleSmsReceiver.INCOMING_SMS_INTENT_SENDER;
 
@@ -132,14 +141,22 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
                 Log.i(TAG, "Not speaking - service stopped");
                 return;
             }
+            String sender = mIntent.getStringExtra(INCOMING_CALL_INTENT_SENDER);
+            String num = mIntent.getStringExtra(INCOMING_CALL_NUMBER);
             Boolean isStarred = mIntent.getBooleanExtra(INCOMING_CALL_IS_STARRED, false);
+
+            String smsmessage = settings.getString("pref_call_reject_sms", getString(R.string.pref_call_reject_sms_default));
             String status = settings.getString("pref_call_action", "-1");
             if(status.equals("0") && !isStarred){
                 Log.i(TAG, "Not speaking - Not a favorite");
+                rejectIncomingCall();
+                sendMySMS(num, smsmessage);
                 return;
             }
             if(status.equals(1)){
                 rejectIncomingCall();
+                sendMySMS(num, smsmessage);
+                return;
             }
 
             final AudioManager am = mAudioManager;
@@ -154,7 +171,7 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
             synchronized (sLock) {
                 am.setRingerMode(AudioManager.RINGER_MODE_SILENT);
 
-                String sender = mIntent.getStringExtra(INCOMING_CALL_INTENT_SENDER);
+
                 Log.d(TAG, "Phone call from " + sender);
                 mTts.speak("Phone call from " + sender , TextToSpeech.QUEUE_FLUSH, null, CALL_UTTERENCE_ID);
             }
@@ -220,7 +237,32 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
     }
 
     private void rejectIncomingCall(){
+        Log.e(TAG, "rejectIncomingCall");
+        ITelephony telephonyService;
+        TelephonyManager telephony = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+        try{
+            Log.d(TAG, "Trying to disconnect call");
+            Class c = Class.forName(telephony.getClass().getName());
+            Method m = c.getDeclaredMethod("getITelephony");
+            m.setAccessible(true);
+            telephonyService = (ITelephony)m.invoke(telephony);
+            telephonyService.endCall();
+            Log.d(TAG, "Tried to disconnect call");
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
 
+    public void sendMySMS(String phone, String message) {
+        SmsManager sms = SmsManager.getDefault();
+        // if message length is too long messages are divided
+        List<String> messages = sms.divideMessage(message);
+        for (String msg : messages) {
 
+            PendingIntent sentIntent = PendingIntent.getBroadcast(this, 0, new Intent("SMS_SENT"), 0);
+            PendingIntent deliveredIntent = PendingIntent.getBroadcast(this, 0, new Intent("SMS_DELIVERED"), 0);
+            sms.sendTextMessage(phone, null, msg, sentIntent, deliveredIntent);
+
+        }
     }
 }

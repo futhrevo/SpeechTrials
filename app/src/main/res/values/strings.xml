@@ -21,4 +21,6 @@
     <string name="pref_autodetect_summary">Using Bluetooth and Activity Detection events app is triggered to run</string>
     <string name="sharedPref_file_key">in.hedera.reku.speechtrial.isRunning</string>
     <string name="isRunning">isRunning</string>
+    <string name="pref_call_reject_sms_title">Reject Message</string>
+    <string name="pref_call_reject_sms_default">Sorry am unable to talk right now. Will call you later.</string>
 </resources>
