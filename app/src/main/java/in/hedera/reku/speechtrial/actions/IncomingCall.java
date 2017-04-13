@@ -15,11 +15,12 @@ import in.hedera.reku.speechtrial.NotifyService;
 import static in.hedera.reku.speechtrial.NotifyService.ACTION_PHONE_STATE;
 
 public class IncomingCall extends BroadcastReceiver {
-    String sender;
+    String sender = "Unknown Number";
+    Boolean isStarred = false;
     Context c;
     Intent i;
 
-    public static final String INCOMING_CALL_LOCAL_BROADCAST = "incomingcall";
+    public static final String INCOMING_CALL_IS_STARRED = "isStarredSender";
     public static final String INCOMING_CALL_INTENT_SENDER = "sender";
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -47,22 +48,23 @@ public class IncomingCall extends BroadcastReceiver {
             Log.d("MyPhoneListener",state+"   incoming no:"+incomingNumber);
 
             if (state == 1) {
-                Uri personUri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, "+" + incomingNumber);
+                Uri personUri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(incomingNumber));
 
-                Cursor cur = c.getContentResolver().query(personUri, new String[]{ContactsContract.PhoneLookup.DISPLAY_NAME}, null, null, null);
+                Cursor cur = c.getContentResolver().query(personUri, new String[]{ContactsContract.PhoneLookup.DISPLAY_NAME, ContactsContract.PhoneLookup.STARRED}, null, null, null);
 
                 if (cur.moveToFirst()) {
                     int nameIndex = cur.getColumnIndex(ContactsContract.PhoneLookup.DISPLAY_NAME);
+                    int starIndex = cur.getColumnIndex(ContactsContract.PhoneLookup.STARRED);
 
                     sender = cur.getString(nameIndex);
+                    isStarred = cur.getInt(starIndex) == 1;
+                    Log.e("MyPhoneListener", String.valueOf(isStarred));
                 }
                 cur.close();
-                if (sender == null) {
-                    sender = "Unknown Number";
-                }
                 Intent serv = new Intent(c, NotifyService.class);
                 serv.setAction(ACTION_PHONE_STATE);
                 serv.putExtra(INCOMING_CALL_INTENT_SENDER, sender);
+                serv.putExtra(INCOMING_CALL_IS_STARRED, isStarred);
                 c.startService(serv);
 
             }

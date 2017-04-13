@@ -3,16 +3,20 @@ package in.hedera.reku.speechtrial;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import android.speech.tts.UtteranceProgressListener;
 import android.util.Log;
 
 import static android.media.AudioManager.STREAM_NOTIFICATION;
+import static in.hedera.reku.speechtrial.R.string.isRunning;
 import static in.hedera.reku.speechtrial.actions.IncomingCall.INCOMING_CALL_INTENT_SENDER;
+import static in.hedera.reku.speechtrial.actions.IncomingCall.INCOMING_CALL_IS_STARRED;
 import static in.hedera.reku.speechtrial.actions.SimpleSmsReceiver.INCOMING_SMS_INTENT_MESSAGE;
 import static in.hedera.reku.speechtrial.actions.SimpleSmsReceiver.INCOMING_SMS_INTENT_SENDER;
 
@@ -99,6 +103,10 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
 
     @Override
     public void run() {
+        SharedPreferences sharedPref = getSharedPreferences(getString(R.string.sharedPref_file_key), Context.MODE_PRIVATE);
+        Boolean isStopped = ! sharedPref.getBoolean(getString(isRunning), false);
+        SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
+
 
         Log.d(TAG, "run thread");
         while (! mIsReady) {
@@ -120,11 +128,24 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
         }
         Log.d(TAG, action);
         if (action.equals(ACTION_PHONE_STATE)) {
+            if(isStopped){
+                Log.i(TAG, "Not speaking - service stopped");
+                return;
+            }
+            Boolean isStarred = mIntent.getBooleanExtra(INCOMING_CALL_IS_STARRED, false);
+            String status = settings.getString("pref_call_action", "-1");
+            if(status.equals("0") && !isStarred){
+                Log.i(TAG, "Not speaking - Not a favorite");
+                return;
+            }
+            if(status.equals(1)){
+                rejectIncomingCall();
+            }
+
             final AudioManager am = mAudioManager;
             final int mode = am.getRingerMode();
-
             if (mode == AudioManager.RINGER_MODE_SILENT ||
-                    mode == AudioManager.RINGER_MODE_VIBRATE) {
+                    mode == AudioManager.RINGER_MODE_VIBRATE ) {
                 Log.i(TAG, "Not speaking - volume is 0");
                 return;
             }
@@ -142,7 +163,11 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
 
         else if (action.equals(ACTION_SMS_RECEIVED)) {
             final AudioManager am = mAudioManager;
-            if (am.getStreamVolume(STREAM_NOTIFICATION) == 0) {
+            if(isStopped){
+                Log.i(TAG, "Not speaking - service stopped");
+                return;
+            }
+            if (am.getStreamVolume(STREAM_NOTIFICATION) == 0 || isStopped) {
                 Log.i(TAG, "Not speaking - volume is 0");
                 return;
             }
@@ -192,5 +217,10 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
             mTts.shutdown();
             mTts = null;
         }
+    }
+
+    private void rejectIncomingCall(){
+
+
     }
 }

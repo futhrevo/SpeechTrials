@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="pref_call_action_list_titles">
+        <item>Reject With SMS</item>
+        <item>Accept only Favorites</item>
+        <item>Accept All</item>
+    </string-array>
+    <string-array name="pref_call_action__list_values" >
+        <item>1</item>
+        <item>0</item>
+        <item>-1</item>
+    </string-array>
+    <string-array name="pref_sms_action_list_titles" >
+        <item>Prompt to Read</item>
+        <item>Read</item>
+        <item>No Action</item>
+    </string-array>>
+    <string-array name="pref_sms_action__list_values" >
+        <item>1</item>
+        <item>0</item>
+        <item>-1</item>
+    </string-array>>
+</resources>

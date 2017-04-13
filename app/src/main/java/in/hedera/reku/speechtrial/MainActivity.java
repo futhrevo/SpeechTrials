@@ -11,25 +11,24 @@ import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.speech.RecognizerIntent;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.CompoundButton;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.ToggleButton;
 
 import java.util.ArrayList;
 import java.util.Locale;
-
-import in.hedera.reku.speechtrial.speech.SpeechActivationService;
 
 import static in.hedera.reku.speechtrial.NotifyService.ACTION_SPEAK;
 import static in.hedera.reku.speechtrial.NotifyService.INCOMING_SPEAK_MESSAGE;
@@ -45,6 +44,8 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQ_CODE_SPEECH_INPUT = 100;
     private static final int PERMISSIONS_REQUEST_ALL_PERMISSIONS = 101;
     private AudioManager audioManager;
+
+    public static final int ST_Notification_ID = 912;
 
     private View speechLayout;
     private View voiceLayout;
@@ -82,46 +83,46 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setTitle(getString(R.string.app_name));
+        }
+
         speechLayout = findViewById(R.id.speechtotext);
         voiceLayout = findViewById(R.id.voicecall);
         expLayout = findViewById(R.id.experimental);
-        ToggleButton togglesco = (ToggleButton) findViewById(R.id.toggleSCO);
-        togglesco.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
 
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if(isChecked && !sco){
-                    bluetoothController.start();
-                    sco = true;
-                }else{
-                    if(sco){
-                        bluetoothController.stop();
-                        sco = false;
-                    }
+        Boolean isScoEnabled = PreferenceManager
+                .getDefaultSharedPreferences(this).getBoolean("pref_sco_key", false);
 
+
+        Log.d(TAG, String.valueOf(isScoEnabled));
+        if(bluetoothController != null){
+            if(isScoEnabled){
+                bluetoothController.start();
+                sco = true;
+            }else{
+                if(sco){
+                    bluetoothController.stop();
+                    sco = false;
                 }
             }
-        });
+        }
 
-        ToggleButton togglecvd = (ToggleButton) findViewById(R.id.toggleCVD);
-        togglecvd.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if(isChecked){
-                    startService(SpeechActivationService.makeStartServiceIntent(getApplicationContext()));
-                }else{
-                    startService(SpeechActivationService.makeStopServiceIntent(getApplicationContext()));
-                }
-
-            }
-        });
-        Button speechInputButton = (Button) speechLayout.findViewById(R.id.speakbutton);
-        speechInputButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startVoiceInput();
-            }
-        });
+//        ToggleButton togglecvd = (ToggleButton) findViewById(R.id.toggleCVD);
+//        togglecvd.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+//            @Override
+//            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+//                if(isChecked){
+//                    startService(SpeechActivationService.makeStartServiceIntent(getApplicationContext()));
+//                }else{
+//                    startService(SpeechActivationService.makeStopServiceIntent(getApplicationContext()));
+//                }
+//
+//            }
+//        });
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
 
@@ -140,6 +141,7 @@ public class MainActivity extends AppCompatActivity {
         bluetoothController = new BluetoothControllerImpl(this);
 //        bluetoothController.start();
         audioManager=(AudioManager)getSystemService(Context.AUDIO_SERVICE);
+        showNotification();
     }
 
     @Override
@@ -163,6 +165,37 @@ public class MainActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
 //        bluetoothController.stop();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main_menu, menu);
+
+        // Configure the search info and add any event listeners...
+
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_settings:
+                // User chose the "Settings" item, show the app settings UI...
+                Intent intent = new Intent(this,SettingsActivity.class);
+                startActivity(intent);
+                return true;
+
+            case R.id.action_speak:
+                startVoiceInput();
+                return true;
+
+            default:
+                // If we got here, the user's action was not recognized.
+                // Invoke the superclass to handle it.
+                return super.onOptionsItemSelected(item);
+
+        }
+
     }
 
     @Override
@@ -330,5 +363,10 @@ public class MainActivity extends AppCompatActivity {
             speakintent.setAction(ACTION_SPEAK);
             speakintent.putExtra(INCOMING_SPEAK_MESSAGE, string);
             startService(speakintent);
-        }
+    }
+
+    private void showNotification(){
+        Intent stopintent = new Intent(getApplication(), ActionsControlIntentService.class).setAction(ActionsControlIntentService.START_RECEIVERS);
+        startService(stopintent);
+    }
 }

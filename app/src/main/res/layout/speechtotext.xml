@@ -5,15 +5,6 @@
     android:layout_height="match_parent"
     >
 
-    <Button
-        android:id="@+id/speakbutton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|center"
-        android:layout_margin="80dp"
-        android:text="Speak"
-        tools:text="Speak" />
-
     <TextView
         android:id="@+id/recognisedtextView"
         android:layout_width="wrap_content"
@@ -29,25 +20,15 @@
         android:layout_gravity="bottom|center"
         android:layout_margin="5dp">
 
-        <ToggleButton
-            android:id="@+id/toggleCVD"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="ToggleCVD"
-            android:textOff="CVD OFF"
-            android:textOn="CVD ON" />
+        <!--<ToggleButton-->
+            <!--android:id="@+id/toggleCVD"-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_weight="1"-->
+            <!--android:text="ToggleCVD"-->
+            <!--android:textOff="CVD OFF"-->
+            <!--android:textOn="CVD ON" />-->
 
-        <ToggleButton
-            android:id="@+id/toggleSCO"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:checked="false"
-            android:text="ToggleButton"
-            android:textOff="Start SCO"
-            android:textOn="Stop SCO"
-            tools:text="SCO toggle" />
     </LinearLayout>
 
 </FrameLayout>
