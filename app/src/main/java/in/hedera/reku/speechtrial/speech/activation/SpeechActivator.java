@@ -1,4 +1,6 @@
-package in.hedera.reku.speechtrial.speech;
+package in.hedera.reku.speechtrial.speech.activation;
+
+import in.hedera.reku.speechtrial.speech.activation.SpeechActivationListener;
 
 /**
  * Created by rakeshkalyankar on 17/03/17.

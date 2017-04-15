@@ -1,4 +1,4 @@
-package in.hedera.reku.speechtrial.speech;
+package in.hedera.reku.speechtrial.speech.activation;
 
 /**
  * Created by rakeshkalyankar on 17/03/17.

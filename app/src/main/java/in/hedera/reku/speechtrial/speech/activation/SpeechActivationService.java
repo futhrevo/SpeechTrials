@@ -1,4 +1,4 @@
-package in.hedera.reku.speechtrial.speech;
+package in.hedera.reku.speechtrial.speech.activation;
 
 import android.app.Notification;
 import android.app.PendingIntent;
@@ -15,7 +15,7 @@ import android.util.Log;
  * Created by rakeshkalyankar on 18/03/17.
  */
 
-public class SpeechActivationService extends Service implements SpeechActivationListener{
+public class SpeechActivationService extends Service implements SpeechActivationListener {
 
     private static final String TAG = SpeechActivationService.class.getSimpleName();
     private boolean isStarted;

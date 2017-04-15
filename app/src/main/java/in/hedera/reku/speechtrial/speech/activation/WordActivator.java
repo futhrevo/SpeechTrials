@@ -1,4 +1,4 @@
-package in.hedera.reku.speechtrial.speech;
+package in.hedera.reku.speechtrial.speech.activation;
 
 import android.content.Context;
 import android.content.Intent;
@@ -13,6 +13,7 @@ import android.util.Log;
 import java.util.List;
 import java.util.Locale;
 
+import in.hedera.reku.speechtrial.speech.SpeechRecognitionUtil;
 import in.hedera.reku.speechtrial.speech.text.WordList;
 import in.hedera.reku.speechtrial.speech.text.match.SoundsLikeWordMatcher;
 

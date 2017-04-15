@@ -2,10 +2,14 @@ package in.hedera.reku.speechtrial;
 
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
+import android.media.session.MediaController;
+import android.media.session.MediaSessionManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
@@ -15,9 +19,11 @@ import android.speech.tts.UtteranceProgressListener;
 import android.telephony.SmsManager;
 import android.telephony.TelephonyManager;
 import android.util.Log;
+import android.view.KeyEvent;
 
 import com.android.internal.telephony.ITelephony;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.List;
 
@@ -41,6 +47,7 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
     private static final String CALL_UTTERENCE_ID = "call";
     private static final String SMS_UTTERENCE_ID = "sms";
     private static final String SPEAK_UTTERENCE_ID = "speak";
+    private static final String SILENCE = ". . . ";
     private static final Object sLock = new Object();
     private TextToSpeech mTts;
     private AudioManager mAudioManager;
@@ -147,14 +154,15 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
 
             String smsmessage = settings.getString("pref_call_reject_sms", getString(R.string.pref_call_reject_sms_default));
             String status = settings.getString("pref_call_action", "-1");
+            Log.d(TAG, "settings status is "+ status);
             if(status.equals("0") && !isStarred){
                 Log.i(TAG, "Not speaking - Not a favorite");
-                rejectIncomingCall();
+                incomingCallAction(false);
                 sendMySMS(num, smsmessage);
                 return;
             }
-            if(status.equals(1)){
-                rejectIncomingCall();
+            if(status.equals("1")){
+                incomingCallAction(false);
                 sendMySMS(num, smsmessage);
                 return;
             }
@@ -173,7 +181,8 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
 
 
                 Log.d(TAG, "Phone call from " + sender);
-                mTts.speak("Phone call from " + sender , TextToSpeech.QUEUE_FLUSH, null, CALL_UTTERENCE_ID);
+                mTts.speak(SILENCE + "Phone call from " + sender , TextToSpeech.QUEUE_FLUSH, null, CALL_UTTERENCE_ID);
+                incomingCallAction(true);
             }
 
         }
@@ -196,7 +205,7 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
                 Bundle b = new Bundle();
                 b.putString(TextToSpeech.Engine.KEY_PARAM_STREAM, STREAM_SYSTEM_STR);
                 Log.d(TAG, "SMS from " + sender + " . . . " + message);
-                mTts.speak("SMS from " + sender + " . . . " + message, TextToSpeech.QUEUE_FLUSH, null, SMS_UTTERENCE_ID);
+                mTts.speak(SILENCE + "SMS from " + sender + " . . . " + message, TextToSpeech.QUEUE_FLUSH, null, SMS_UTTERENCE_ID);
             }
 
         }
@@ -207,7 +216,7 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
 
                 Bundle b = new Bundle();
                 b.putString(TextToSpeech.Engine.KEY_PARAM_STREAM, STREAM_SYSTEM_STR);
-                mTts.speak(message, TextToSpeech.QUEUE_FLUSH, null, SPEAK_UTTERENCE_ID);
+                mTts.speak(SILENCE + message, TextToSpeech.QUEUE_FLUSH, null, SPEAK_UTTERENCE_ID);
             }
         }
     }
@@ -236,24 +245,36 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
         }
     }
 
-    private void rejectIncomingCall(){
-        Log.e(TAG, "rejectIncomingCall");
+    @SuppressWarnings("unchecked")
+    private void incomingCallAction(boolean bool){
+        Log.e(TAG, "incomingCallAction "+ bool );
         ITelephony telephonyService;
         TelephonyManager telephony = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
         try{
-            Log.d(TAG, "Trying to disconnect call");
             Class c = Class.forName(telephony.getClass().getName());
             Method m = c.getDeclaredMethod("getITelephony");
             m.setAccessible(true);
             telephonyService = (ITelephony)m.invoke(telephony);
-            telephonyService.endCall();
-            Log.d(TAG, "Tried to disconnect call");
+            if(bool){
+                Log.d(TAG, "Trying to Answer call");
+                telephonyService.silenceRinger();
+                answercall();
+            }else{
+                Log.d(TAG, "Trying to disconnect call");
+                telephonyService.endCall();
+            }
+
         }catch (Exception e){
             e.printStackTrace();
         }
     }
 
+    private void rejectCall(){
+
+    }
+
     public void sendMySMS(String phone, String message) {
+        Log.d(TAG, "Sensing sms to "+ phone);
         SmsManager sms = SmsManager.getDefault();
         // if message length is too long messages are divided
         List<String> messages = sms.divideMessage(message);
@@ -263,6 +284,83 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
             PendingIntent deliveredIntent = PendingIntent.getBroadcast(this, 0, new Intent("SMS_DELIVERED"), 0);
             sms.sendTextMessage(phone, null, msg, sentIntent, deliveredIntent);
 
+        }
+    }
+
+    public void answerCall() {
+
+        new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    Log.d(TAG, "Answer the call ====");
+                    Runtime.getRuntime().exec("input keyevent " + Integer.toString(KeyEvent.KEYCODE_HEADSETHOOK));
+                } catch (IOException e) {
+                    Log.e(TAG, "IOException on answerCall ========== ");
+                    // Runtime.exec(String) had an I/O problem, try to fall back
+                    String enforcedPerm = "android.permission.CALL_PRIVILEGED";
+                    Intent btnDown = new Intent(Intent.ACTION_MEDIA_BUTTON).putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_HEADSETHOOK));
+                    Intent btnUp = new Intent(Intent.ACTION_MEDIA_BUTTON).putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_HEADSETHOOK));
+
+                    sendOrderedBroadcast(btnDown, enforcedPerm);
+                    sendOrderedBroadcast(btnUp, enforcedPerm);
+                }
+            }
+
+        }).start();
+    }
+
+    public void answercall(){
+        if (Build.VERSION.SDK_INT < 21) {
+            tryMediaAction();
+        }else if(tryMediaController()){
+            Log.d(TAG, "AnswerType.MEDIA_CONTROLLER");
+        } else {
+            tryKeyEvent();
+        }
+    }
+
+    private void tryMediaAction() {
+        Log.d(TAG, "Answering incoming call via media action");
+        try {
+            Intent intent = new Intent("android.intent.action.MEDIA_BUTTON");
+            intent.putExtra("android.intent.extra.KEY_EVENT", new KeyEvent(0, 79));
+            sendBroadcast(intent, "android.permission.CALL_PRIVILEGED");
+        } catch (Throwable e) {
+            e.printStackTrace();
+            Log.e(TAG, "Cannot answer the incoming Call via MediaAction");
+        }
+        try {
+            Intent intent = new Intent("android.intent.action.MEDIA_BUTTON");
+            intent.putExtra("android.intent.extra.KEY_EVENT", new KeyEvent(1, 79));
+            sendBroadcast(intent, "android.permission.CALL_PRIVILEGED");
+        } catch (Throwable e2) {
+            e2.printStackTrace();
+            Log.e(TAG, "Cannot answer the incoming Call via MediaAction");
+        }
+    }
+
+    private boolean tryMediaController() {
+        try {
+            for (MediaController mediaController : ((MediaSessionManager) getSystemService(Context.MEDIA_SESSION_SERVICE)).getActiveSessions(new ComponentName(this, in.hedera.reku.speechtrial.NotificationListenerService.class))) {
+                if ("com.android.server.telecom".equals(mediaController.getPackageName())) {
+                    Log.d(TAG, "Sending HEADSETHOOK to telecom server");
+                    return mediaController.dispatchMediaButtonEvent(new KeyEvent(1, 79));
+                }
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    private void tryKeyEvent() {
+        Log.d(TAG, "Answering incoming call via input keyevent");
+        try {
+            Runtime.getRuntime().exec("input keyevent 79");
+        } catch (Throwable th) {
+            Log.d(TAG, "Cannot answer the incoming Call by KeyEvent");
         }
     }
 }

@@ -19,6 +19,7 @@ public class IncomingCall extends BroadcastReceiver {
     Boolean isStarred = false;
     Context c;
     Intent i;
+    private static int lastState = TelephonyManager.CALL_STATE_IDLE;
 
     public static final String INCOMING_CALL_IS_STARRED = "isStarredSender";
     public static final String INCOMING_CALL_INTENT_SENDER = "sender";
@@ -46,6 +47,10 @@ public class IncomingCall extends BroadcastReceiver {
         @Override
         public void onCallStateChanged(int state, String incomingNumber) {
 
+            if(lastState == state){
+                return;
+            }
+
             Log.d("MyPhoneListener",state+"   incoming no:"+incomingNumber);
 
             if (state == 1) {
@@ -70,6 +75,8 @@ public class IncomingCall extends BroadcastReceiver {
                 c.startService(serv);
 
             }
+
+            lastState = state;
         }
     }
 }

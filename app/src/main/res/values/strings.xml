@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">SpeechTrial</string>
+    <string name="app_name">Rider</string>
     <string name="title_home">Home</string>
     <string name="title_dashboard">Dashboard</string>
     <string name="title_notifications">Notifications</string>
@@ -23,4 +23,8 @@
     <string name="isRunning">isRunning</string>
     <string name="pref_call_reject_sms_title">Reject Message</string>
     <string name="pref_call_reject_sms_default">Sorry am unable to talk right now. Will call you later.</string>
+    <string name="no">no</string>
+    <string name="yes">yes</string>
+    <string name="notification_listener_service_explanation">For the the app. to work you need to enable the Notification Listener Service. Enable it now?</string>
+    <string name="notification_listener_service">Rider</string>
 </resources>

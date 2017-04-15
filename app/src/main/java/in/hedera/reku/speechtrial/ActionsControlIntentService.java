@@ -76,9 +76,9 @@ public class ActionsControlIntentService extends IntentService {
         NotificationCompat.Builder mBuilder =
                 new NotificationCompat.Builder(this)
                         .setSmallIcon(R.drawable.ic_stat_name)
-                        .setContentTitle("SpeechTrial")
+                        .setContentTitle("Rider")
                         .setContentText("Stopped")
-                        .addAction(R.drawable.ic_stop_black_24dp, "START", pIntent)
+                        .addAction(R.drawable.ic_play_outline_black_24dp, "START", pIntent)
                         .setOngoing(true);
 
 
@@ -97,7 +97,7 @@ public class ActionsControlIntentService extends IntentService {
         NotificationCompat.Builder mBuilder =
                 new NotificationCompat.Builder(this)
                         .setSmallIcon(R.drawable.ic_stat_name)
-                        .setContentTitle("SpeechTrial")
+                        .setContentTitle("Rider")
                         .setContentText("Running ...")
                         .addAction(R.drawable.ic_stop_black_24dp, "STOP", pIntent)
                         .setOngoing(true);
