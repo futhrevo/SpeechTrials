@@ -182,7 +182,6 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
 
                 Log.d(TAG, "Phone call from " + sender);
                 mTts.speak(SILENCE + "Phone call from " + sender , TextToSpeech.QUEUE_FLUSH, null, CALL_UTTERENCE_ID);
-                incomingCallAction(true);
             }
 
         }
@@ -227,6 +226,7 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
             if (utteranceId.equals(CALL_UTTERENCE_ID)) {
                 Log.d(TAG, "resetting call volume");
                 mAudioManager.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
+                incomingCallAction(true);
             }
 
             else if (utteranceId.equals(SMS_UTTERENCE_ID)) {
@@ -246,29 +246,28 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
     }
 
     @SuppressWarnings("unchecked")
-    private void incomingCallAction(boolean bool){
-        Log.e(TAG, "incomingCallAction "+ bool );
+    private void incomingCallAction(boolean bool) {
+        Log.e(TAG, "incomingCallAction " + bool);
         ITelephony telephonyService;
         TelephonyManager telephony = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-        try{
+        try {
             Class c = Class.forName(telephony.getClass().getName());
             Method m = c.getDeclaredMethod("getITelephony");
             m.setAccessible(true);
-            telephonyService = (ITelephony)m.invoke(telephony);
-            if(bool){
+            telephonyService = (ITelephony) m.invoke(telephony);
+            if (bool) {
                 Log.d(TAG, "Trying to Answer call");
                 telephonyService.silenceRinger();
                 answercall();
-            }else{
+            } else {
                 Log.d(TAG, "Trying to disconnect call");
                 telephonyService.endCall();
             }
 
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
-
     private void rejectCall(){
 
     }

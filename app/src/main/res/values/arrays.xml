@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="pref_call_action_list_titles">
-        <item>Reject With SMS</item>
-        <item>Accept only Favorites</item>
+        <item>Reject All Calls</item>
+        <item>Answer Calls from Favorites only</item>
         <item>Accept All</item>
     </string-array>
     <string-array name="pref_call_action__list_values" >
