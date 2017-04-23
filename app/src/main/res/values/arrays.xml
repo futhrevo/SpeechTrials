@@ -24,4 +24,18 @@
         <item>read</item>
         <item>ok</item>>
     </string-array>
+    <string-array name="voiceaction_yeswords" >
+        <item>yes</item>
+        <item>ok</item>
+    </string-array>>
+    <string-array name="voiceaction_nowords" >
+        <item>no</item>
+    </string-array>
+    <string-array name="voiceaction_neutralwords" >
+        <item>cancel</item>
+        <item>done</item>
+    </string-array>
+    <string-array name="read_SMS_command" >
+        <item>read</item>
+    </string-array>
 </resources>

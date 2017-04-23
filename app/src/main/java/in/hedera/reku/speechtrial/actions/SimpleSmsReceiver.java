@@ -20,6 +20,7 @@ public class SimpleSmsReceiver extends BroadcastReceiver {
     public static final String INCOMING_SMS_LOCAL_BROADCAST = "incomingSms";
     public static final String INCOMING_SMS_INTENT_SENDER = "sender";
     public static final String INCOMING_SMS_INTENT_MESSAGE = "message";
+    String sender = "Unknown Number";
 
     private static final String TAG = SimpleSmsReceiver.class.getSimpleName();
     @Override
@@ -29,7 +30,6 @@ public class SimpleSmsReceiver extends BroadcastReceiver {
         SmsMessage messages = SmsMessage.createFromPdu((byte[]) pdus[0]);
         Log.i(TAG, messages.getMessageBody());
         String callMessage = messages.getMessageBody();
-        String sender = messages.getDisplayOriginatingAddress();
 
         Uri personUri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, messages.getOriginatingAddress());
 
@@ -41,14 +41,6 @@ public class SimpleSmsReceiver extends BroadcastReceiver {
             sender = cur.getString(nameIndex);
         }
         cur.close();
-
-        if(sender == null){
-            sender = "Unknown Number";
-        }
-
-//        Toast.makeText(context, "SMS Received : "+messages.getMessageBody(),
-//                Toast.LENGTH_LONG) .show();
-
 
         Intent serv = new Intent(context, NotifyService.class);
         serv.setAction(ACTION_SMS_RECEIVED);

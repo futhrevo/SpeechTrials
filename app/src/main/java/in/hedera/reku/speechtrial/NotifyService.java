@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.media.session.MediaController;
 import android.media.session.MediaSessionManager;
 import android.os.Build;
@@ -16,6 +17,7 @@ import android.preference.PreferenceManager;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import android.speech.tts.UtteranceProgressListener;
+import android.speech.tts.Voice;
 import android.telephony.SmsManager;
 import android.telephony.TelephonyManager;
 import android.util.Log;
@@ -26,14 +28,16 @@ import com.android.internal.telephony.ITelephony;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Locale;
+
+import in.hedera.reku.speechtrial.speech.commands.ReadSMS;
+import in.hedera.reku.speechtrial.speech.voiceaction.VoiceActionExecutor;
 
 import static android.media.AudioManager.STREAM_NOTIFICATION;
 import static in.hedera.reku.speechtrial.R.string.isRunning;
 import static in.hedera.reku.speechtrial.actions.IncomingCall.INCOMING_CALL_INTENT_SENDER;
 import static in.hedera.reku.speechtrial.actions.IncomingCall.INCOMING_CALL_IS_STARRED;
 import static in.hedera.reku.speechtrial.actions.IncomingCall.INCOMING_CALL_NUMBER;
-import static in.hedera.reku.speechtrial.actions.SimpleSmsReceiver.INCOMING_SMS_INTENT_MESSAGE;
-import static in.hedera.reku.speechtrial.actions.SimpleSmsReceiver.INCOMING_SMS_INTENT_SENDER;
 
 public class NotifyService extends Service implements OnInitListener, Runnable{
     public static final String ACTION_PHONE_STATE = "android.intent.action.PHONE_STATE";
@@ -47,13 +51,15 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
     private static final String CALL_UTTERENCE_ID = "call";
     private static final String SMS_UTTERENCE_ID = "sms";
     private static final String SPEAK_UTTERENCE_ID = "speak";
-    private static final String SILENCE = ". . . ";
+    private static final String SILENCE_UTTERENCER_ID = "silence";
+    private static final String SILENCE = "";
     private static final Object sLock = new Object();
     private TextToSpeech mTts;
     private AudioManager mAudioManager;
     private Intent mIntent;
     private boolean mIsReady = false;
     private int mSysVol;
+    private VoiceActionExecutor executor;
 
     public NotifyService() {
     }
@@ -68,10 +74,15 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
         Log.d(TAG, "onCreate");
         if (mTts == null) {
             mTts = new TextToSpeech(this, this);
+            if (Build.VERSION.SDK_INT >= 21) {
+                Voice voice = new Voice(getPackageName(), Locale.getDefault(), Voice.QUALITY_VERY_HIGH, Voice.LATENCY_NORMAL, false, null);
+                mTts.setVoice(voice);
+            }
             Log.d(TAG, "TTS created");
         }
 
         mAudioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+        initDialog();
     }
 
     @Override
@@ -181,7 +192,13 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
 
 
                 Log.d(TAG, "Phone call from " + sender);
-                mTts.speak(SILENCE + "Phone call from " + sender , TextToSpeech.QUEUE_FLUSH, null, CALL_UTTERENCE_ID);
+                try {
+                    playDing();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                mTts.playSilentUtterance(800, TextToSpeech.QUEUE_FLUSH, SILENCE_UTTERENCER_ID);
+                mTts.speak(SILENCE + "Phone call from " + sender , TextToSpeech.QUEUE_ADD, null, CALL_UTTERENCE_ID);
             }
 
         }
@@ -198,24 +215,29 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
             }
 
             synchronized (sLock) {
-                String sender = mIntent.getStringExtra(INCOMING_SMS_INTENT_SENDER);
-                String message = mIntent.getStringExtra(INCOMING_SMS_INTENT_MESSAGE);
 
-                Bundle b = new Bundle();
-                b.putString(TextToSpeech.Engine.KEY_PARAM_STREAM, STREAM_SYSTEM_STR);
-                Log.d(TAG, "SMS from " + sender + " . . . " + message);
-                mTts.speak(SILENCE + "SMS from " + sender + " . . . " + message, TextToSpeech.QUEUE_FLUSH, null, SMS_UTTERENCE_ID);
+
+                Log.d(TAG, "New SMS Received");
+                mTts.playSilentUtterance(800, TextToSpeech.QUEUE_FLUSH, SILENCE_UTTERENCER_ID);
+                new ReadSMS(this, executor, true, mIntent);
+//                mTts.speak(SILENCE + "SMS from " + sender + " . . . " + message, TextToSpeech.QUEUE_ADD, null, SMS_UTTERENCE_ID);
             }
 
         }
 
         else if (action.equals(ACTION_SPEAK)){
             synchronized (sLock) {
+                try {
+                    playDing();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 String message = mIntent.getStringExtra(INCOMING_SPEAK_MESSAGE);
 
                 Bundle b = new Bundle();
                 b.putString(TextToSpeech.Engine.KEY_PARAM_STREAM, STREAM_SYSTEM_STR);
-                mTts.speak(SILENCE + message, TextToSpeech.QUEUE_FLUSH, null, SPEAK_UTTERENCE_ID);
+                mTts.playSilentUtterance(800, TextToSpeech.QUEUE_FLUSH, SILENCE_UTTERENCER_ID);
+                mTts.speak(SILENCE + message, TextToSpeech.QUEUE_ADD, null, SPEAK_UTTERENCE_ID);
             }
         }
     }
@@ -360,6 +382,23 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
             Runtime.getRuntime().exec("input keyevent 79");
         } catch (Throwable th) {
             Log.d(TAG, "Cannot answer the incoming Call by KeyEvent");
+        }
+    }
+    private void playDing() throws IOException {
+        final MediaPlayer mp = MediaPlayer.create(this, R.raw.announcementbegin);
+        if(mp.isPlaying()) {
+            mp.pause();
+        } else {
+            mp.start();
+        }
+    }
+
+    private void initDialog()
+    {
+        if (executor == null)
+        {
+            executor = new VoiceActionExecutor(this);
+            executor.setTts();
         }
     }
 }
