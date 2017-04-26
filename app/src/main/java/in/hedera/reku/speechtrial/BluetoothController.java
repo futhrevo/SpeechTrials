@@ -3,6 +3,8 @@ package in.hedera.reku.speechtrial;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothHeadset;
+import android.bluetooth.BluetoothProfile;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -10,6 +12,9 @@ import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.os.CountDownTimer;
 import android.util.Log;
+import android.widget.Toast;
+
+import java.util.Set;
 
 /**
  * Created by rakeshkalyankar on 15/03/17.
@@ -28,6 +33,7 @@ public abstract class BluetoothController {
     private boolean mIsStarted;
 
     private static final String TAG = "BluetoothController";
+    private BluetoothHeadset btHeadset;
 
     /**
      * Constructor
@@ -36,8 +42,26 @@ public abstract class BluetoothController {
      */
     public BluetoothController(Context context) {
         mContext = context;
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         mAudioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+
+        Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
+        BluetoothProfile.ServiceListener mProfileListener = new BluetoothProfile.ServiceListener() {
+            public void onServiceConnected(int profile, BluetoothProfile proxy)
+            {
+                if (profile == BluetoothProfile.HEADSET)
+                {
+                    btHeadset = (BluetoothHeadset) proxy;
+                }
+            }
+            public void onServiceDisconnected(int profile)
+            {
+                if (profile == BluetoothProfile.HEADSET) {
+                    btHeadset = null;
+                }
+            }
+        };
+        mBluetoothAdapter.getProfileProxy(context, mProfileListener, BluetoothProfile.HEADSET);
     }
 
     /**
@@ -67,6 +91,13 @@ public abstract class BluetoothController {
         }
     }
 
+    public BluetoothHeadset getHeadset(){
+        return btHeadset;
+    }
+
+    public BluetoothAdapter getAdapter(){
+        return mBluetoothAdapter;
+    }
     public abstract void onHeadsetDisconnected();
 
     public abstract void onHeadsetConnected();
@@ -150,7 +181,7 @@ public abstract class BluetoothController {
                             onHeadsetConnected();
                         }
                     }
-                    Log.d(TAG, mConnectedHeadset.getName() + " connected");
+                    Log.i(TAG, mConnectedHeadset.getName() + " connected");
                     break;
 
                 case BluetoothDevice.ACTION_ACL_DISCONNECTED:
@@ -183,10 +214,10 @@ public abstract class BluetoothController {
                             // override this if you want to do other thing when Sco audio is connected.
                             onScoAudioConnected();
 
-                            Log.d(TAG, "Sco connected");
+                            Log.i(TAG, "Sco connected");
                             break;
                         case AudioManager.SCO_AUDIO_STATE_DISCONNECTED:
-                            Log.d(TAG, "Sco disconnected");
+                            Log.i(TAG, "Sco disconnected");
 
                             // Always receive SCO_AUDIO_STATE_DISCONNECTED on call to startBluetooth()
                             // which at that stage we do not want to do anything. Thus the if condition.
@@ -230,6 +261,8 @@ public abstract class BluetoothController {
             mAudioManager.setMode(AudioManager.MODE_NORMAL);
 
             Log.d(TAG, "\nonFinish fail to connect to headset audio");
+            Toast.makeText(mContext, "Failed to connect to bluetooth headset",
+                    Toast.LENGTH_SHORT).show();
         }
     };
 }

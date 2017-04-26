@@ -10,13 +10,13 @@ public class NotificationListenerService extends android.service.notification.No
 
     @Override
     public void onNotificationPosted(StatusBarNotification notification){
-        String notificationDescription = String.valueOf(notification.getId()) + ". " + notification.getNotification().extras.getString(Notification.EXTRA_TEXT);
+        String notificationDescription = String.valueOf(notification.getId()) + ". " + notification.getNotification().extras.getCharSequence(Notification.EXTRA_TEXT, " ").toString();
         Log.i(getClass().toString(), notificationDescription + " onNotificationPosted");
     }
 
     @Override
     public void onNotificationRemoved(StatusBarNotification notification){
-        String notificationDescription = String.valueOf(notification.getId()) + ". " + notification.getNotification().extras.getString(Notification.EXTRA_TEXT);
+        String notificationDescription = String.valueOf(notification.getId()) + ". " + notification.getNotification().extras.getCharSequence(Notification.EXTRA_TEXT, " ").toString();
         Log.i(getClass().toString(), notificationDescription + " onNotificationRemoved");
     }
 }

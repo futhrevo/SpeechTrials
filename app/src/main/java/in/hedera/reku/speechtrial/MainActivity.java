@@ -2,6 +2,9 @@ package in.hedera.reku.speechtrial;
 
 import android.Manifest;
 import android.app.NotificationManager;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothHeadset;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -32,6 +35,7 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.Set;
 
 import static android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS;
 import static in.hedera.reku.speechtrial.NotifyService.ACTION_SPEAK;
@@ -100,22 +104,6 @@ public class MainActivity extends AppCompatActivity {
         voiceLayout = findViewById(R.id.voicecall);
         expLayout = findViewById(R.id.experimental);
 
-        Boolean isScoEnabled = PreferenceManager
-                .getDefaultSharedPreferences(this).getBoolean("pref_sco_key", false);
-
-
-        Log.d(TAG, String.valueOf(isScoEnabled));
-        if(bluetoothController != null){
-            if(isScoEnabled){
-                bluetoothController.start();
-                sco = true;
-            }else{
-                if(sco){
-                    bluetoothController.stop();
-                    sco = false;
-                }
-            }
-        }
 
 //        ToggleButton togglecvd = (ToggleButton) findViewById(R.id.toggleCVD);
 //        togglecvd.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -145,7 +133,6 @@ public class MainActivity extends AppCompatActivity {
             requestPermissions();
         }
         bluetoothController = new BluetoothControllerImpl(this);
-//        bluetoothController.start();
         audioManager=(AudioManager)getSystemService(Context.AUDIO_SERVICE);
         showNotification();
 
@@ -158,6 +145,38 @@ public class MainActivity extends AppCompatActivity {
         startService(serv);
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.d(TAG, "onDestroy");
+        if(sco){
+            bluetoothController.stop();
+            sco = false;
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.d(TAG, "onResume");
+        Boolean isScoEnabled = PreferenceManager
+                .getDefaultSharedPreferences(this).getBoolean("pref_sco_key", false);
+
+
+        Log.i(TAG, "SCO is set to " + String.valueOf(isScoEnabled));
+        if(bluetoothController != null){
+            if(isScoEnabled){
+                bluetoothController.start();
+                sco = true;
+            }else{
+                if(sco){
+                    bluetoothController.stop();
+                    sco = false;
+                }
+            }
+        }
+
+    }
     @Override
     protected void onStop() {
         super.onStop();
@@ -206,7 +225,23 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG, "New Call received");
         }
     }
+
     private void startVoiceInput() {
+        BluetoothAdapter btAdapter = bluetoothController.getAdapter();
+        BluetoothHeadset btHeadset = bluetoothController.getHeadset();
+        Set<BluetoothDevice> pairedDevices = btAdapter.getBondedDevices();
+
+        if(btAdapter.isEnabled())
+        {
+            for (BluetoothDevice tryDevice : pairedDevices)
+            {
+                //This loop tries to start VoiceRecognition mode on every paired device until it finds one that works(which will be the currently in use bluetooth headset)
+                if (btHeadset.startVoiceRecognition(tryDevice))
+                {
+                    break;
+                }
+            }
+        }
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
@@ -256,6 +291,21 @@ public class MainActivity extends AppCompatActivity {
         switch (requestCode) {
             case REQ_CODE_SPEECH_INPUT: {
                 if (resultCode == RESULT_OK && null != data) {
+//                    BluetoothAdapter btAdapter = bluetoothController.getAdapter();
+//                    BluetoothHeadset btHeadset = bluetoothController.getHeadset();
+//                    Set<BluetoothDevice> pairedDevices = btAdapter.getBondedDevices();
+//
+//                    if(btAdapter.isEnabled())
+//                    {
+//                        for (BluetoothDevice tryDevice : pairedDevices)
+//                        {
+//                            //This loop tries to start VoiceRecognition mode on every paired device until it finds one that works(which will be the currently in use bluetooth headset)
+//                            if (btHeadset.stopVoiceRecognition(tryDevice))
+//                            {
+//                                break;
+//                            }
+//                        }
+//                    }
 
                     ArrayList<String> result = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
                     recognisedView.setText(result.get(0));
