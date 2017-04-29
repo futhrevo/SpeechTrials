@@ -246,9 +246,14 @@ public abstract class BluetoothController {
         public void onTick(long millisUntilFinished) {
             // When this call is successful, this count down timer will be canceled.
             try {
-                mAudioManager.startBluetoothSco();
-            } catch (Exception ignored) {
-
+                if(!mAudioManager.isBluetoothScoOn()){
+                    mAudioManager.startBluetoothSco();
+                }else{
+                    Log.d(TAG, "SCO is already ON");
+                    mCountDown.cancel();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
             Log.d(TAG, "\nonTick start bluetooth Sco");
         }

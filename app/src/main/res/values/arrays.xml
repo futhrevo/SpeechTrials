@@ -37,5 +37,8 @@
     </string-array>
     <string-array name="read_SMS_command" >
         <item>read</item>
+        <item>Listen</item>
+        <item>Yes</item>
+        <item>ok</item>
     </string-array>
 </resources>

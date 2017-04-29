@@ -267,7 +267,6 @@ public class MainActivity extends AppCompatActivity {
                 }
                 if (hasAllPermissions) {
                     Log.d(TAG, "All permissions granted");
-                    finish();
                 } else {
                     Toast.makeText(this,
                             "Unable to get all required permissions", Toast.LENGTH_LONG).show();
@@ -291,21 +290,21 @@ public class MainActivity extends AppCompatActivity {
         switch (requestCode) {
             case REQ_CODE_SPEECH_INPUT: {
                 if (resultCode == RESULT_OK && null != data) {
-//                    BluetoothAdapter btAdapter = bluetoothController.getAdapter();
-//                    BluetoothHeadset btHeadset = bluetoothController.getHeadset();
-//                    Set<BluetoothDevice> pairedDevices = btAdapter.getBondedDevices();
-//
-//                    if(btAdapter.isEnabled())
-//                    {
-//                        for (BluetoothDevice tryDevice : pairedDevices)
-//                        {
-//                            //This loop tries to start VoiceRecognition mode on every paired device until it finds one that works(which will be the currently in use bluetooth headset)
-//                            if (btHeadset.stopVoiceRecognition(tryDevice))
-//                            {
-//                                break;
-//                            }
-//                        }
-//                    }
+                    BluetoothAdapter btAdapter = bluetoothController.getAdapter();
+                    BluetoothHeadset btHeadset = bluetoothController.getHeadset();
+                    Set<BluetoothDevice> pairedDevices = btAdapter.getBondedDevices();
+
+                    if(btAdapter.isEnabled())
+                    {
+                        for (BluetoothDevice tryDevice : pairedDevices)
+                        {
+                            //This loop tries to start VoiceRecognition mode on every paired device until it finds one that works(which will be the currently in use bluetooth headset)
+                            if (btHeadset.stopVoiceRecognition(tryDevice))
+                            {
+                                break;
+                            }
+                        }
+                    }
 
                     ArrayList<String> result = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
                     recognisedView.setText(result.get(0));

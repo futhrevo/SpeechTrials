@@ -49,6 +49,12 @@ public class VoiceAlertDialog extends MultiCommandVoiceAction {
                         R.array.voiceaction_neutralwords);
     }
 
+    public VoiceAlertDialog(Context context, String[] yes, String[] no, String[] neutral){
+        super(new ArrayList<VoiceActionCommand>());
+        if(yes != null) yesWords = yes;
+        if(no != null) noWords = no;
+        if(neutral != null) neutralWords = neutral;
+    }
     /**
      * add your own command to the dialog here if it consists of words
      */

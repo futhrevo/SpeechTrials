@@ -194,6 +194,7 @@ public class VoiceActionExecutor implements TextToSpeech.OnInitListener, Recogni
     @Override
     public void onError(int errorCode) {
         Log.d(TAG, "FAILED " + SpeechRecognitionUtil.diagnoseErrorCode(errorCode));
+        doRecognitionOnActive();
     }
 
     @Override

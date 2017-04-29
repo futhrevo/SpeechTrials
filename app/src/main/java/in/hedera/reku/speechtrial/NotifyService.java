@@ -38,8 +38,10 @@ import static in.hedera.reku.speechtrial.R.string.isRunning;
 import static in.hedera.reku.speechtrial.actions.IncomingCall.INCOMING_CALL_INTENT_SENDER;
 import static in.hedera.reku.speechtrial.actions.IncomingCall.INCOMING_CALL_IS_STARRED;
 import static in.hedera.reku.speechtrial.actions.IncomingCall.INCOMING_CALL_NUMBER;
+import static in.hedera.reku.speechtrial.actions.SimpleSmsReceiver.INCOMING_SMS_INTENT_MESSAGE;
+import static in.hedera.reku.speechtrial.actions.SimpleSmsReceiver.INCOMING_SMS_INTENT_SENDER;
 
-public class NotifyService extends Service implements OnInitListener, Runnable{
+public class NotifyService extends Service implements OnInitListener, Runnable {
     public static final String ACTION_PHONE_STATE = "android.intent.action.PHONE_STATE";
     public static final String ACTION_SMS_RECEIVED = "android.provider.Telephony.SMS_RECEIVED";
     public static final String ACTION_BATTERY_LOW = "android.intent.action.ACTION_BATTERY_LOW";
@@ -131,12 +133,12 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
     @Override
     public void run() {
         SharedPreferences sharedPref = getSharedPreferences(getString(R.string.sharedPref_file_key), Context.MODE_PRIVATE);
-        Boolean isStopped = ! sharedPref.getBoolean(getString(isRunning), false);
+        Boolean isStopped = !sharedPref.getBoolean(getString(isRunning), false);
         SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
 
 
         Log.d(TAG, "run thread");
-        while (! mIsReady) {
+        while (!mIsReady) {
             synchronized (sLock) {
                 try {
                     sLock.wait();
@@ -145,17 +147,17 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
                 }
             }
         }
-        if(mIntent == null){
+        if (mIntent == null) {
             return;
         }
         final String action = mIntent.getAction();
 
-        if (action == null ) {
+        if (action == null) {
             return;
         }
         Log.d(TAG, action);
         if (action.equals(ACTION_PHONE_STATE)) {
-            if(isStopped){
+            if (isStopped) {
                 Log.i(TAG, "Not speaking - service stopped");
                 return;
             }
@@ -165,14 +167,14 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
 
             String smsmessage = settings.getString("pref_call_reject_sms", getString(R.string.pref_call_reject_sms_default));
             String status = settings.getString("pref_call_action", "-1");
-            Log.d(TAG, "settings status is "+ status);
-            if(status.equals("0") && !isStarred){
+            Log.d(TAG, "settings status is " + status);
+            if (status.equals("0") && !isStarred) {
                 Log.i(TAG, "Not speaking - Not a favorite");
                 incomingCallAction(false);
                 sendMySMS(num, smsmessage);
                 return;
             }
-            if(status.equals("1")){
+            if (status.equals("1")) {
                 incomingCallAction(false);
                 sendMySMS(num, smsmessage);
                 return;
@@ -181,7 +183,7 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
             final AudioManager am = mAudioManager;
             final int mode = am.getRingerMode();
             if (mode == AudioManager.RINGER_MODE_SILENT ||
-                    mode == AudioManager.RINGER_MODE_VIBRATE ) {
+                    mode == AudioManager.RINGER_MODE_VIBRATE) {
                 Log.i(TAG, "Not speaking - volume is 0");
                 return;
             }
@@ -198,14 +200,12 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
                     e.printStackTrace();
                 }
                 mTts.playSilentUtterance(800, TextToSpeech.QUEUE_FLUSH, SILENCE_UTTERENCER_ID);
-                mTts.speak(SILENCE + "Phone call from " + sender , TextToSpeech.QUEUE_ADD, null, CALL_UTTERENCE_ID);
+                mTts.speak(SILENCE + "Phone call from " + sender, TextToSpeech.QUEUE_ADD, null, CALL_UTTERENCE_ID);
             }
 
-        }
-
-        else if (action.equals(ACTION_SMS_RECEIVED)) {
+        } else if (action.equals(ACTION_SMS_RECEIVED)) {
             final AudioManager am = mAudioManager;
-            if(isStopped){
+            if (isStopped) {
                 Log.i(TAG, "Not speaking - service stopped");
                 return;
             }
@@ -213,19 +213,27 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
                 Log.i(TAG, "Not speaking - volume is 0");
                 return;
             }
-
+            String status = settings.getString("pref_sms_action", "-1");
+            Log.d(TAG, "New SMS Received");
+            if (status.equals("-1")) {
+                Log.i(TAG, "User doesn't want to be notified about new SMS");
+                return;
+            }
             synchronized (sLock) {
+                if (status.equals("1")) {
+                    new ReadSMS(this, executor, true, mIntent);
+                } else {
+                    String sender = mIntent.getStringExtra(INCOMING_SMS_INTENT_SENDER);
+                    String message = mIntent.getStringExtra(INCOMING_SMS_INTENT_MESSAGE);
 
+                    mTts.playSilentUtterance(800, TextToSpeech.QUEUE_FLUSH, SILENCE_UTTERENCER_ID);
 
-                Log.d(TAG, "New SMS Received");
-                mTts.playSilentUtterance(800, TextToSpeech.QUEUE_FLUSH, SILENCE_UTTERENCER_ID);
-                new ReadSMS(this, executor, true, mIntent);
-//                mTts.speak(SILENCE + "SMS from " + sender + " . . . " + message, TextToSpeech.QUEUE_ADD, null, SMS_UTTERENCE_ID);
+                    mTts.speak(SILENCE + "SMS from " + sender + " . . . " + message, TextToSpeech.QUEUE_ADD, null, SMS_UTTERENCE_ID);
+                }
+
             }
 
-        }
-
-        else if (action.equals(ACTION_SPEAK)){
+        } else if (action.equals(ACTION_SPEAK)) {
             synchronized (sLock) {
                 try {
                     playDing();
@@ -249,9 +257,7 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
                 Log.d(TAG, "resetting call volume");
                 mAudioManager.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
                 incomingCallAction(true);
-            }
-
-            else if (utteranceId.equals(SMS_UTTERENCE_ID)) {
+            } else if (utteranceId.equals(SMS_UTTERENCE_ID)) {
                 Log.d(TAG, "resetting sms volume");
             }
         }
@@ -290,12 +296,13 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
             e.printStackTrace();
         }
     }
-    private void rejectCall(){
+
+    private void rejectCall() {
 
     }
 
     public void sendMySMS(String phone, String message) {
-        Log.d(TAG, "Sensing sms to "+ phone);
+        Log.d(TAG, "Sensing sms to " + phone);
         SmsManager sms = SmsManager.getDefault();
         // if message length is too long messages are divided
         List<String> messages = sms.divideMessage(message);
@@ -308,34 +315,10 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
         }
     }
 
-    public void answerCall() {
-
-        new Thread(new Runnable() {
-
-            @Override
-            public void run() {
-                try {
-                    Log.d(TAG, "Answer the call ====");
-                    Runtime.getRuntime().exec("input keyevent " + Integer.toString(KeyEvent.KEYCODE_HEADSETHOOK));
-                } catch (IOException e) {
-                    Log.e(TAG, "IOException on answerCall ========== ");
-                    // Runtime.exec(String) had an I/O problem, try to fall back
-                    String enforcedPerm = "android.permission.CALL_PRIVILEGED";
-                    Intent btnDown = new Intent(Intent.ACTION_MEDIA_BUTTON).putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_HEADSETHOOK));
-                    Intent btnUp = new Intent(Intent.ACTION_MEDIA_BUTTON).putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_HEADSETHOOK));
-
-                    sendOrderedBroadcast(btnDown, enforcedPerm);
-                    sendOrderedBroadcast(btnUp, enforcedPerm);
-                }
-            }
-
-        }).start();
-    }
-
-    public void answercall(){
+    public void answercall() {
         if (Build.VERSION.SDK_INT < 21) {
             tryMediaAction();
-        }else if(tryMediaController()){
+        } else if (tryMediaController()) {
             Log.d(TAG, "AnswerType.MEDIA_CONTROLLER");
         } else {
             tryKeyEvent();
@@ -384,19 +367,18 @@ public class NotifyService extends Service implements OnInitListener, Runnable{
             Log.d(TAG, "Cannot answer the incoming Call by KeyEvent");
         }
     }
+
     private void playDing() throws IOException {
         final MediaPlayer mp = MediaPlayer.create(this, R.raw.announcementbegin);
-        if(mp.isPlaying()) {
+        if (mp.isPlaying()) {
             mp.pause();
         } else {
             mp.start();
         }
     }
 
-    private void initDialog()
-    {
-        if (executor == null)
-        {
+    private void initDialog() {
+        if (executor == null) {
             executor = new VoiceActionExecutor(this);
             executor.setTts();
         }
